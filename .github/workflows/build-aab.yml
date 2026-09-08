@@ -23,10 +23,10 @@ jobs:
           gradle-version: '8.13'
 
       - name: Unpack app source
-        run: unzip -q 9BallScorekeeper_V4_CloudBuild_fixed.zip
+        run: 9BallScorekeeper_V5_Practice_Source.zip
 
       - name: Configure signing and build
-        working-directory: 9BallScorekeeper_V4_League
+        working-directory: 9BallScorekeeper_V5_Practice
         shell: bash
         run: |
           set -e
