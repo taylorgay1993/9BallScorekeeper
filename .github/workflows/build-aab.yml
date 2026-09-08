@@ -91,7 +91,7 @@ jobs:
           GRADLE
 
           export KEYSTORE_PASSWORD="$PASS"
-printf 'android.useAndroidX=true\n' > gradle.properties
+          printf 'android.useAndroidX=true\n' > gradle.properties
           gradle --no-daemon bundleRelease
 
           cp app/build/outputs/bundle/release/app-release.aab 9BallScorekeeper.aab
