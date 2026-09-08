@@ -23,7 +23,8 @@ jobs:
           gradle-version: '8.13'
 
       - name: Unpack app source
-        run: 9BallScorekeeper_V5_Practice_Source.zip
+        run: unzip 9BallScorekeeper_V5_Practice_Source.zip
+        working-directory: 9BallScorekeeper_V5_Practice
 
       - name: Configure signing and build
         working-directory: 9BallScorekeeper_V5_Practice
