@@ -22,7 +22,7 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Unpack app source
+      - name: Unzip project
         run: unzip 9BallScorekeeper_V5_Practice_Source.zip
         working-directory: 9BallScorekeeper_V4_League
 
