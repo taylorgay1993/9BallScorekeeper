@@ -24,7 +24,7 @@ jobs:
 
       - name: Unpack app source
         run: unzip 9BallScorekeeper_V5_Practice_Source.zip
-        working-directory: 9BallScorekeeper_V5_Practice
+        working-directory: 9BallScorekeeper_V4_League
 
       - name: Configure signing and build
         working-directory: 9BallScorekeeper_V5_Practice
