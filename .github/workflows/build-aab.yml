@@ -1,0 +1,107 @@
+name: Build 9 Ball Scorekeeper AAB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Unpack app source
+        run: unzip -q 9BallScorekeeper_V4_CloudBuild_fixed.zip
+
+      - name: Configure signing and build
+        working-directory: 9BallScorekeeper_V4_League
+        shell: bash
+        run: |
+          set -e
+
+          PASS="$(openssl rand -hex 24)"
+
+          keytool -genkeypair -v \
+            -keystore app/upload-keystore.jks \
+            -alias upload \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass "$PASS" \
+            -keypass "$PASS" \
+            -dname "CN=9 Ball Scorekeeper, OU=Mobile, O=9 Ball Scorekeeper, L=Indiana, ST=Indiana, C=US"
+
+          printf '%s\n' "$PASS" > upload-keystore-password.txt
+
+          cat > app/build.gradle.kts <<'GRADLE'
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+
+          android {
+              namespace = "com.nineball.scorekeeper"
+              compileSdk = 36
+
+              signingConfigs {
+                  create("release") {
+                      storeFile = file("upload-keystore.jks")
+                      storePassword = System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias = "upload"
+                      keyPassword = System.getenv("KEYSTORE_PASSWORD")
+                  }
+              }
+
+              defaultConfig {
+                  applicationId = "com.nineball.scorekeeper"
+                  minSdk = 26
+                  targetSdk = 36
+                  versionCode = 41
+                  versionName = "4.1"
+              }
+
+              buildTypes {
+                  release {
+                      signingConfig = signingConfigs.getByName("release")
+                  }
+              }
+
+              buildFeatures {
+                  viewBinding = true
+              }
+          }
+
+          dependencies {
+              implementation("androidx.core:core-ktx:1.17.0")
+              implementation("androidx.appcompat:appcompat:1.7.1")
+              implementation("com.google.android.material:material:1.13.0")
+          }
+          GRADLE
+
+          export KEYSTORE_PASSWORD="$PASS"
+
+          gradle --no-daemon bundleRelease
+
+          cp app/build/outputs/bundle/release/app-release.aab 9BallScorekeeper.aab
+
+      - name: Upload finished AAB and signing files
+        uses: actions/upload-artifact@v4
+        with:
+          name: 9BallScorekeeper-AAB
+          path: |
+            9BallScorekeeper_V4_League/9BallScorekeeper.aab
+            9BallScorekeeper_V4_League/app/upload-keystore.jks
+            9BallScorekeeper_V4_League/upload-keystore-password.txt
+          retention-days: 90
