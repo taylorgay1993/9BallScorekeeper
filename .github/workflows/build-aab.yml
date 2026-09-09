@@ -26,6 +26,10 @@ jobs:
       - name: Unzip V5 source
         run: unzip -q 9BallScorekeeper_V5_1_Practice_Source.zip
 
+              - name: Change app name
+        working-directory: 9BallScorekeeper_V4_League
+        run: sed -i 's/android:label="[^"]*"/android:label="9Ball Scorekeeper - League Practice"/' app/src/main/AndroidManifest.xml
+
       - name: Configure AndroidX
         working-directory: 9BallScorekeeper_V4_League
         run: echo "android.useAndroidX=true" > gradle.properties
