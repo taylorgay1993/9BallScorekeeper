@@ -1,11 +1,8 @@
+
 name: Build 9 Ball Scorekeeper AAB
 
 on:
   workflow_dispatch:
-
-permissions:
-  contents: read
-  actions: read
 
 jobs:
   build:
@@ -33,43 +30,17 @@ jobs:
         working-directory: 9BallScorekeeper_V4_League
         run: echo "android.useAndroidX=true" > gradle.properties
 
-      - name: Recover original Play upload key
+      - name: Restore original upload key
+        working-directory: 9BallScorekeeper_V4_League
         env:
-          GH_TOKEN: ${{ github.token }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTOREBASE64 }}
         run: |
-          RUN_ID=$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/build-aab.yml/runs?per_page=100" \
-            --jq '.workflow_runs[] | select(.run_number == 5 and .conclusion == "success") | .id' \
-            | head -n 1)
-
-          if [ -z "$RUN_ID" ]; then
-            echo "Could not find successful original Build #5."
-            exit 1
-          fi
-
-          mkdir -p old-signing-artifact
-
-          gh run download "$RUN_ID" \
-            --repo "$GITHUB_REPOSITORY" \
-            --name "9BallScorekeeper-AAB" \
-            --dir old-signing-artifact
-
-          KEYSTORE=$(find old-signing-artifact -type f -name "*.jks" | head -n 1)
-          PASSFILE=$(find old-signing-artifact -type f -name "upload-keystore-password.txt" | head -n 1)
-
-          if [ -z "$KEYSTORE" ] || [ -z "$PASSFILE" ]; then
-            echo "Original signing key or password was not found."
-            exit 1
-          fi
-
-          cp "$KEYSTORE" 9BallScorekeeper_V4_League/app/upload-keystore.jks
-
-          PASS=$(tr -d '\r\n' < "$PASSFILE")
-          echo "::add-mask::$PASS"
-          echo "KEYSTORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+          echo "$KEYSTORE_BASE64" | base64 --decode > app/upload-keystore.jks
 
       - name: Configure release signing
         working-directory: 9BallScorekeeper_V4_League
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTOREPASSWORD }}
         run: |
           cat >> app/build.gradle.kts <<'EOF'
 
@@ -91,18 +62,19 @@ jobs:
           }
           EOF
 
-      - name: Build V5 AAB
+      - name: Build V5 Practice AAB
         working-directory: 9BallScorekeeper_V4_League
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTOREPASSWORD }}
         run: gradle bundleRelease
 
-      - name: Prepare AAB
+      - name: Copy V5 AAB
         run: |
-          cp \
-            9BallScorekeeper_V4_League/app/build/outputs/bundle/release/app-release.aab \
-            9BallScorekeeper-V5.aab
+          cp 9BallScorekeeper_V4_League/app/build/outputs/bundle/release/app-release.aab \
+             9BallScorekeeper-V5-Practice.aab
 
-      - name: Upload V5 AAB
+      - name: Upload V5 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 9BallScorekeeper-V5-AAB
-          path: 9BallScorekeeper-V5.aab
+          name: 9BallScorekeeper-V5-Practice-AAB
+          path: 9BallScorekeeper-V5-Practice.aab
