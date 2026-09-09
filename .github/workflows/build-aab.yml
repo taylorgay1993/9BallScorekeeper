@@ -1,7 +1,11 @@
-name: Build 9 Ball Scorekeeper AAB
+namename: Build 9 Ball Scorekeeper AAB
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   build:
@@ -17,47 +21,59 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle 8.13
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
 
-      - name: Unzip project
-        run: unzip 
-        9BallScorekeeper_V5_Practice_Source
-        .zip
+      - name: Unzip V5 source
+        run: unzip -q 9BallScorekeeper_V5_Practice_Source.zip
+
+      - name: Configure AndroidX
         working-directory: 9BallScorekeeper_V4_League
+        run: echo "android.useAndroidX=true" > gradle.properties
 
-      - name: Configure signing and build
-        working-directory: 9BallScorekeeper_V5_Practice
-        shell: bash
+      - name: Recover original Play upload key
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          set -e
+          RUN_ID=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/build-aab.yml/runs?per_page=100" \
+            --jq '.workflow_runs[] | select(.run_number == 5 and .conclusion == "success") | .id' \
+            | head -n 1)
 
-          PASS="$(openssl rand -hex 24)"
+          if [ -z "$RUN_ID" ]; then
+            echo "Could not find successful original Build #5."
+            exit 1
+          fi
 
-          keytool -genkeypair -v \
-            -keystore app/upload-keystore.jks \
-            -alias upload \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass "$PASS" \
-            -keypass "$PASS" \
-            -dname "CN=9 Ball Scorekeeper, OU=Mobile, O=9 Ball Scorekeeper, L=Indiana, ST=Indiana, C=US"
+          mkdir -p old-signing-artifact
 
-          printf '%s\n' "$PASS" > upload-keystore-password.txt
+          gh run download "$RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "9BallScorekeeper-AAB" \
+            --dir old-signing-artifact
 
-          cat > app/build.gradle.kts <<'GRADLE'
-          plugins {
-              id("com.android.application")
-              id("org.jetbrains.kotlin.android")
-          }
+          KEYSTORE=$(find old-signing-artifact -type f -name "*.jks" | head -n 1)
+          PASSFILE=$(find old-signing-artifact -type f -name "upload-keystore-password.txt" | head -n 1)
+
+          if [ -z "$KEYSTORE" ] || [ -z "$PASSFILE" ]; then
+            echo "Original signing key or password was not found."
+            exit 1
+          fi
+
+          cp "$KEYSTORE" 9BallScorekeeper_V4_League/app/upload-keystore.jks
+
+          PASS=$(tr -d '\r\n' < "$PASSFILE")
+          echo "::add-mask::$PASS"
+          echo "KEYSTORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+
+      - name: Configure release signing
+        working-directory: 9BallScorekeeper_V4_League
+        run: |
+          cat >> app/build.gradle.kts <<'EOF'
 
           android {
-              namespace = "com.nineball.scorekeeper"
-              compileSdk = 36
-
               signingConfigs {
                   create("release") {
                       storeFile = file("upload-keystore.jks")
@@ -67,52 +83,26 @@ jobs:
                   }
               }
 
-              defaultConfig {
-                  applicationId = "com.nineball.scorekeeper"
-                  minSdk = 26
-                  targetSdk = 36
-                  versionCode = 41
-                  versionName = "4.1"
-              }
-
               buildTypes {
-                  release {
+                  getByName("release") {
                       signingConfig = signingConfigs.getByName("release")
                   }
               }
-
-              buildFeatures {
-                  viewBinding = true
-                  }
-          compileOptions {
-              sourceCompatibility = JavaVersion.VERSION_17
-              targetCompatibility = JavaVersion.VERSION_17
           }
+          EOF
 
-          kotlinOptions {
-              jvmTarget = "17"
-          }
-          }
+      - name: Build V5 AAB
+        working-directory: 9BallScorekeeper_V4_League
+        run: gradle bundleRelease
 
-          dependencies {
-              implementation("androidx.core:core-ktx:1.17.0")
-              implementation("androidx.appcompat:appcompat:1.7.1")
-              implementation("com.google.android.material:material:1.13.0")
-          }
-          GRADLE
+      - name: Prepare AAB
+        run: |
+          cp \
+            9BallScorekeeper_V4_League/app/build/outputs/bundle/release/app-release.aab \
+            9BallScorekeeper-V5.aab
 
-          export KEYSTORE_PASSWORD="$PASS"
-          printf 'android.useAndroidX=true\n' > gradle.properties
-          gradle --no-daemon bundleRelease
-
-          cp app/build/outputs/bundle/release/app-release.aab 9BallScorekeeper.aab
-
-      - name: Upload finished AAB and signing files
+      - name: Upload V5 AAB
         uses: actions/upload-artifact@v4
         with:
-          name: 9BallScorekeeper-AAB
-          path: |
-            9BallScorekeeper_V4_League/9BallScorekeeper.aab
-            9BallScorekeeper_V4_League/app/upload-keystore.jks
-            9BallScorekeeper_V4_League/upload-keystore-password.txt
-          retention-days: 90
+          name: 9BallScorekeeper-V5-AAB
+          path: 9BallScorekeeper-V5.aab
