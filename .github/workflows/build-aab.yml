@@ -43,7 +43,7 @@ jobs:
         run: echo "android.useAndroidX=true" > gradle.properties
       - name: Set version code 5.2
         working-directory: 9BallScorekeeper_V4_League
-        run: sed -i 's/versionCode = 52/versionCode = 53/' app/build.gradle.kts
+        run: sed -i 's/versionCode = 51/versionCode = 53/' app/build.gradle.kts
       - name: Restore original upload key
         working-directory: 9BallScorekeeper_V4_League
         env:
