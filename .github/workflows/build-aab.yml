@@ -24,7 +24,7 @@ jobs:
           gradle-version: '8.13'
 
       - name: Unzip V5 source
-        run: unzip -q 9BallScorekeeper_V5_Practice_Source.zip
+        run: unzip -q 9BallScorekeeper_V5_1_Practice_Source.zip
 
       - name: Configure AndroidX
         working-directory: 9BallScorekeeper_V4_League
