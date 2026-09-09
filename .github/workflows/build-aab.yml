@@ -31,8 +31,8 @@ jobs:
         run: sed -i 's/android:label="[^"]*"/android:label="9Ball Scorekeeper - League Practice"/' app/src/main/AndroidManifest.xml
 
       - name: Set custom app icon
-          working-directory: 9BallScorekeeper_V4_League
-          run: |
+        working-directory: 9BallScorekeeper_V4_League
+        run: |
             mkdir -p app/src/main/res/drawable
             cp ../file_000000005f1481f5a4a0012b4c5bdadf.png app/src/main/res/drawable/app_icon.png
             sed -i 's|android:icon="[^"]*"|android:icon="@drawable/app_icon"|g' app/src/main/AndroidManifest.xml
