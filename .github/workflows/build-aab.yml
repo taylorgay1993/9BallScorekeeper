@@ -1,4 +1,4 @@
-namename: Build 9 Ball Scorekeeper AAB
+name: Build 9 Ball Scorekeeper AAB
 
 on:
   workflow_dispatch:
