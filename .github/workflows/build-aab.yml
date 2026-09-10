@@ -24,7 +24,7 @@ jobs:
           gradle-version: '8.13'
 
       - name: Unzip V5 source
-        run: unzip -q 9BallScorekeeper_V5_3_Practice_Source.zip
+        run:  unzip -q 9BallScorekeeper_V5_3_Practice_Source_FIXED.zip
 
       - name: Change app name
         working-directory: 9BallScorekeeper_V4_League
