@@ -24,7 +24,7 @@ jobs:
           gradle-version: '8.13'
 
       - name: Unzip V5 source
-        run:  unzip -q 9BallScorekeeper_V5_7_3_Practice_Source_FINAL.zip
+        run:  unzip -q 9BallScorekeeper_V5_8_Practice_Source_FINAL.zip
 
       - name: Change app name
         working-directory: 9BallScorekeeper_V4_League
@@ -41,9 +41,9 @@ jobs:
       - name: Configure AndroidX
         working-directory: 9BallScorekeeper_V4_League
         run: echo "android.useAndroidX=true" > gradle.properties
-      - name: Set version code 5.7.3
+      - name: Set version code 5.8
         working-directory: 9BallScorekeeper_V4_League
-        run: sed -i -E 's/versionCode = [0-9]+/versionCode = 65/' app/build.gradle.kts
+        run: sed -i -E 's/versionCode = [0-9]+/versionCode = 66/' app/build.gradle.kts
       - name: Restore original upload key
         working-directory: 9BallScorekeeper_V4_League
         env:
